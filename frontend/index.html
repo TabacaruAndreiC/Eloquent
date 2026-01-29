@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Analyzer</title>
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+    <!-- Hamburger Menu Button -->
+    <button id="hamburgerBtn" class="hamburger-btn" title="Menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+
+    <!-- Dropdown Menu -->
+    <div id="dropdownMenu" class="dropdown-menu hidden">
+        <button class="dropdown-item" data-action="upload">
+            <span class="dropdown-icon">📁</span>
+            <span class="dropdown-text">Add Audio</span>
+        </button>
+        <button class="dropdown-item" data-action="history">
+            <span class="dropdown-icon">📜</span>
+            <span class="dropdown-text">History</span>
+        </button>
+    </div>
+
+    <!-- Menu Overlay -->
+    <div id="menuOverlay" class="menu-overlay hidden"></div>
+
+    <!-- App Logo (clickable - goes home) -->
+    <button id="appLogo" class="app-logo" title="Go to home">
+        <img src="/logo.png" alt="Speech Analyzer Logo">
+    </button>
+
+    <!-- Initial View (Gradient + Centered Button) -->
+    <div id="initialView" class="view initial-view">
+        <div class="initial-content">
+            <p class="initial-subtitle">Analyze your speech and improve your charisma</p>
+            
+            <div class="record-btn-wrapper">
+                <!-- Ripple waves for recording animation -->
+                <div class="ripple-container">
+                    <div class="ripple ripple-1"></div>
+                    <div class="ripple ripple-2"></div>
+                    <div class="ripple ripple-3"></div>
+                </div>
+                
+                <button id="recordBtn" class="record-btn-large">
+                    <span class="record-btn-icon">🎙️</span>
+                    <span class="record-btn-text">Start Recording</span>
+                </button>
+            </div>
+            
+            <div id="recordingStatus" class="recording-status hidden">
+                <span class="recording-text">Listening...</span>
+            </div>
+            
+            <div id="audioPlayer" class="audio-player hidden">
+                <!-- Custom Audio Player for Initial View -->
+                <div class="custom-audio-player custom-audio-player-compact" id="initialCustomPlayer">
+                    <audio id="audioElement" preload="metadata"></audio>
+                    <button class="audio-play-btn" data-action="play" title="Play">
+                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                    </button>
+                    <div class="audio-time">
+                        <span class="audio-current-time">0:00</span>
+                        <span class="audio-separator">/</span>
+                        <span class="audio-duration">0:00</span>
+                    </div>
+                    <div class="audio-progress-container">
+                        <div class="audio-progress-bar">
+                            <div class="audio-progress-filled"></div>
+                            <div class="audio-progress-handle"></div>
+                        </div>
+                    </div>
+                    <button class="audio-volume-btn" data-action="volume" title="Volume">
+                        <svg class="volume-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg class="volume-mute-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <button id="analyzeBtn" class="btn btn-analyze hidden">
+                <span class="btn-icon">📊</span>
+                <span class="btn-text">Analyze Speech</span>
+            </button>
+            
+            <!-- Analyzing transition overlay -->
+            <div id="analyzingOverlay" class="analyzing-overlay hidden">
+                <div class="analyzing-circle">
+                    <div class="analyzing-ripple"></div>
+                    <div class="analyzing-ripple"></div>
+                    <div class="analyzing-ripple"></div>
+                    <div class="analyzing-icon">🎙️</div>
+                </div>
+                <p id="loadingText" class="analyzing-text">Processing...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results View -->
+    <div id="resultsView" class="view results-view hidden">
+        <div class="results-wrapper">
+            <div class="results-header">
+                <div class="recording-name-container">
+                    <h1 id="recordingName" class="recording-name">Your Results</h1>
+                    <input 
+                        type="text" 
+                        id="recordingNameInput" 
+                        class="recording-name-input hidden"
+                        placeholder="Enter recording name"
+                        maxlength="50"
+                    >
+                </div>
+                <button id="editNameBtn" class="edit-name-btn" title="Edit name">✏️</button>
+            </div>
+            
+            <!-- Audio Playback Section -->
+            <div id="resultsAudioSection" class="results-audio-section hidden">
+                <div class="results-audio-header">
+                    <span class="results-audio-icon">🎧</span>
+                    <span class="results-audio-title">Your Recording</span>
+                </div>
+                <!-- Custom Audio Player -->
+                <div class="custom-audio-player" id="resultsCustomPlayer">
+                    <audio id="resultsAudioElement" preload="metadata"></audio>
+                    <button class="audio-play-btn" data-action="play" title="Play">
+                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                    </button>
+                    <div class="audio-time">
+                        <span class="audio-current-time">0:00</span>
+                        <span class="audio-separator">/</span>
+                        <span class="audio-duration">0:00</span>
+                    </div>
+                    <div class="audio-progress-container">
+                        <div class="audio-progress-bar">
+                            <div class="audio-progress-filled"></div>
+                            <div class="audio-progress-handle"></div>
+                        </div>
+                    </div>
+                    <button class="audio-volume-btn" data-action="volume" title="Volume">
+                        <svg class="volume-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg class="volume-mute-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
+                    <div class="audio-volume-slider hidden">
+                        <div class="audio-volume-bar">
+                            <div class="audio-volume-filled"></div>
+                            <div class="audio-volume-handle"></div>
+                        </div>
+                    </div>
+                </div>
+                <button id="downloadAudioBtn" class="btn btn-download" title="Download recording">
+                    <span class="btn-icon">⬇️</span>
+                    <span class="btn-text">Download</span>
+                </button>
+            </div>
+            
+            <!-- Charisma Score -->
+            <div id="charismaGauge" class="charisma-gauge"></div>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="transcript">Transcript</button>
+                <button class="tab" data-tab="fillers">Filler Words</button>
+                <button class="tab" data-tab="suggestions">Suggestions</button>
+                <button class="tab" data-tab="summary">Summary</button>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <div id="tab-transcript" class="tab-pane active">
+                    <h3>Transcribed Text</h3>
+                    <p class="tab-description">Filler words are marked in red and crossed out</p>
+                    <div class="divider"></div>
+                    <div id="annotatedText" class="annotated-text"></div>
+                </div>
+                
+                <div id="tab-fillers" class="tab-pane hidden">
+                    <div id="fillerWordsSummary"></div>
+                </div>
+                
+                <div id="tab-suggestions" class="tab-pane hidden">
+                    <div id="vocabularySuggestions"></div>
+                    <div class="divider"></div>
+                    <div id="incoherenceMoments"></div>
+                    <div class="divider"></div>
+                    <div id="strengthsList"></div>
+                </div>
+                
+                <div id="tab-summary" class="tab-pane hidden">
+                    <div id="overallFeedback"></div>
+                    <div class="divider"></div>
+                    <div id="quickStats"></div>
+                    <div class="divider"></div>
+                    <div id="improvementTips"></div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="results-actions">
+                <button id="exportResultsBtn" class="btn btn-export">
+                    <span class="btn-icon">📄</span>
+                    <span class="btn-text">Export Report</span>
+                </button>
+                <button id="reRecordBtn" class="btn btn-re-record">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Re-record</span>
+                </button>
+                <button id="newRecordingBtn" class="btn btn-new-recording">
+                    <span class="btn-icon">🎙️</span>
+                    <span class="btn-text">New Recording</span>
+                </button>
+                <button id="deleteRecordingBtn" class="btn btn-delete">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Delete</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History View -->
+    <div id="historyView" class="view history-view hidden">
+        <div class="history-page">
+            <header class="history-page-header">
+                <button id="historyBackBtn" class="back-btn">
+                    <span class="back-icon">←</span>
+                    <span>Back</span>
+                </button>
+                <h1 class="history-page-title">Recording History</h1>
+            </header>
+            
+            <div id="historyList" class="history-page-list">
+                <p class="history-empty">No recordings yet. Start recording to build your history!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal delete-modal hidden">
+        <div class="modal-content delete-modal-content">
+            <div class="delete-modal-icon">🗑️</div>
+            <h2>Delete Recording?</h2>
+            <p class="delete-modal-text">Are you sure you want to delete this recording? This action cannot be undone.</p>
+            <div class="delete-modal-actions">
+                <button id="cancelDeleteBtn" class="btn btn-secondary">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Audio Modal -->
+    <div id="uploadModal" class="modal upload-modal hidden">
+        <div class="modal-content upload-modal-content">
+            <button id="closeUploadModal" class="upload-modal-close" title="Close">&times;</button>
+            <div class="upload-modal-icon">📁</div>
+            <h2>Upload Audio</h2>
+            <p class="upload-modal-text">Select an audio file to analyze your speech</p>
+            
+            <div id="uploadDropzone" class="upload-dropzone">
+                <div class="upload-dropzone-icon">🎵</div>
+                <p class="upload-dropzone-text">Drag & drop audio file here</p>
+                <p class="upload-dropzone-subtext">or click to browse</p>
+                <label for="audioFileInput" class="upload-file-label visually-hidden">Select audio file</label>
+                <input type="file" id="audioFileInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm,.weba,.flac,.aac,.opus" class="upload-file-input" title="Select audio file">
+            </div>
+            
+            <div id="uploadPreview" class="upload-preview hidden">
+                <div class="upload-file-info">
+                    <span class="upload-file-icon">🎧</span>
+                    <div class="upload-file-details">
+                        <span id="uploadFileName" class="upload-file-name">filename.mp3</span>
+                        <span id="uploadFileSize" class="upload-file-size">2.5 MB</span>
+                    </div>
+                    <button id="removeUploadFile" class="upload-file-remove" title="Remove file">&times;</button>
+                </div>
+                <!-- Custom Audio Player for Upload Preview -->
+                <div class="custom-audio-player custom-audio-player-light" id="uploadCustomPlayer">
+                    <audio id="uploadAudioElement" preload="metadata"></audio>
+                    <button class="audio-play-btn" data-action="play" title="Play">
+                        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                        </svg>
+                    </button>
+                    <div class="audio-time">
+                        <span class="audio-current-time">0:00</span>
+                        <span class="audio-separator">/</span>
+                        <span class="audio-duration">0:00</span>
+                    </div>
+                    <div class="audio-progress-container">
+                        <div class="audio-progress-bar">
+                            <div class="audio-progress-filled"></div>
+                            <div class="audio-progress-handle"></div>
+                        </div>
+                    </div>
+                    <button class="audio-volume-btn" data-action="volume" title="Volume">
+                        <svg class="volume-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg class="volume-mute-icon hidden" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="upload-modal-actions">
+                <button id="cancelUploadBtn" class="btn btn-secondary">Cancel</button>
+                <button id="analyzeUploadBtn" class="btn btn-primary" disabled>
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-text">Analyze Speech</span>
+                </button>
+            </div>
+            
+            <p class="upload-supported-formats">Supported formats: MP3, WAV, OGG, M4A, WEBM, WEBA, FLAC, AAC</p>
+        </div>
+    </div>
+
+    <!-- Info Button -->
+    <button id="infoBtn" class="info-button" title="How to use">i</button>
+    
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>How to Use Speech Analyzer</h2>
+            
+            <h3>📋 Record Live</h3>
+            <ol>
+                <li>Click <strong>Start Recording</strong></li>
+                <li>Tell your speech</li>
+                <li>Click <strong>Stop Recording</strong></li>
+                <li>Click <strong>Analyze Speech</strong></li>
+            </ol>
+            
+            <h3>📁 Upload Audio</h3>
+            <ol>
+                <li>Click the <strong>menu icon</strong> (top-left)</li>
+                <li>Select <strong>Add Audio</strong></li>
+                <li>Drag & drop or browse for a file</li>
+                <li>Click <strong>Analyze Speech</strong></li>
+            </ol>
+            
+            <h3>📜 History</h3>
+            <ol>
+                <li>Click the <strong>menu icon</strong> (top-left)</li>
+                <li>Select <strong>History</strong></li>
+                <li>Click any recording to view its results</li>
+                <li>Use 🗑️ to delete recordings</li>
+            </ol>
+            
+            <h3>💡 Tips</h3>
+            <ul>
+                <li>Use a quality microphone</li>
+                <li>Quiet environment is best</li>
+                <li>Speak naturally</li>
+                <li>Supported formats: MP3, WAV, OGG, M4A, WEBM, WEBA, FLAC, AAC</li>
+            </ul>
+            
+            <h3>🎯 What We Analyze</h3>
+            <ul>
+                <li>Filler words (um, uh, like)</li>
+                <li>Speech coherence</li>
+                <li>Vocabulary</li>
+                <li>Charisma Score (1-100)</li>
+            </ul>
+            
+            <button id="closeModal" class="btn btn-primary">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/api.js"></script>
+    <script src="/js/recorder.js"></script>
+    <script src="/js/components.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
